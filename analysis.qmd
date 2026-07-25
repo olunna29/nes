@@ -10,6 +10,9 @@ execute:
 #| message: false
 library(tidyverse)
 library(primer.data)
+library(tidymodels)
+library(broom)
+library(gt)
 ```
 
 ```{r}
@@ -24,4 +27,40 @@ nes_92 <- nes |>
     pres_vote == "Third Party" ~ "Perot")))
 ```
 
-Summary:
+```{r}
+nes_92 |> 
+  ggplot(aes(x = sex, fill = pres_vote)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Share of Candidate Vote within Sex (1992)",
+    x = "Sex",
+    y = "Percentage",
+    fill = "Candidate",
+    caption = "Data source: American National Election Studies (ANES)"
+  )
+```
+
+```{r}
+#| cache: true
+fit_nes <- multinom_reg(engine = "nnet") |> 
+  fit(pres_vote ~ sex, data = nes_92)
+```
+
+```{r}
+tidy(fit_nes, conf.int = TRUE) |> 
+  gt() |> 
+  tab_header(
+    title = "Multinomial Logistic Regression Model of 1992 Presidential Vote by Sex"
+  ) |> 
+  tab_source_note(
+    source_note = "Data source: American National Election Studies (ANES)"
+  ) |> 
+  fmt_number(
+    columns = where(is.numeric),
+    decimals = 2
+  )
+```
+
+
+Summary: There are various different factors that can influence who one decides to vote for, and an important one is gender. Using the 1992 data from the American National Election Studies (ANES), we aim build a model to find out the difference in the probability of voting for Perot between men and women in the 1992 presidential election. One potential weakness of our model could be validity because the ANES comes from a few weeks after the election and people could have misreported who they voted for. We modeled the multinomial variable of presidential vote as a multinomial logistic function of sex.
