@@ -13,6 +13,7 @@ library(primer.data)
 library(tidymodels)
 library(broom)
 library(gt)
+library(marginaleffects)
 ```
 
 ```{r}
@@ -62,5 +63,27 @@ tidy(fit_nes, conf.int = TRUE) |>
   )
 ```
 
+```{r}
+preds <- predictions(extract_fit_engine(fit_nes),
+                     newdata = data.frame(sex = c("Female", "Male"))) |>
+  as_tibble()
 
-Summary: There are various different factors that can influence who one decides to vote for, and an important one is gender. Using the 1992 data from the American National Election Studies (ANES), we aim build a model to find out the difference in the probability of voting for Perot between men and women in the 1992 presidential election. One potential weakness of our model could be validity because the ANES comes from a few weeks after the election and people could have misreported who they voted for. We modeled the multinomial variable of presidential vote as a multinomial logistic function of sex.
+preds |> 
+  ggplot(aes(x = sex, y = estimate, color = group)) +
+  geom_pointrange(
+    aes(ymin = conf.low, ymax = conf.high),
+    position = position_dodge(width = 0.4)
+  ) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(
+    title = "1992 Presidential Vote Choice by Sex",
+    subtitle = "Clinton held a strong lead among women, while men were more evenly split",
+    caption = "Data source: American National Election Studies (ANES)",
+    x = "Sex",
+    y = "Percentage",
+    color = "Candidate"
+  ) +
+  theme_minimal()
+```
+
+Summary: There are various different factors that can influence who one decides to vote for, and an important one is gender. Using the 1992 data from the American National Election Studies (ANES), we aim build a model to find out the difference in the probability of voting for Perot between men and women in the 1992 presidential election. One potential weakness of our model could be validity because the ANES comes from a few weeks after the election and people could have misreported who they voted for. We modeled the multinomial variable of presidential vote as a multinomial logistic function of sex. We found that men voted for Perot 8.4 percentage points more than women; however, this number can be between 5 and 12 percentage points due to variation. Although, this estimate could have some bias because the data only reflects a small subsect of the population. Additionally, people can be inclined to report that they voted for the candidate that won even when they didn't, potentially skewing the results.
